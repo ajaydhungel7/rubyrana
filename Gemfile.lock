@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyrana (0.2.0)
+    rubyrana (0.2.1)
       faraday (>= 2.0)
       json (>= 2.0)
       redis (>= 4.0)

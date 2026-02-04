@@ -176,6 +176,14 @@ module Rubyrana
             tool_use_id = message[:tool_call_id] || message['tool_call_id']
             structured = message[:structured] || message['structured']
             tool_content = structured || message[:content] || message['content']
+            tool_content = if tool_content.is_a?(Hash)
+                             content_blocks = tool_content[:content] || tool_content['content']
+                             content_blocks.is_a?(Array) ? content_blocks : tool_content.to_json
+                           elsif tool_content.is_a?(Array)
+                             tool_content
+                           else
+                             tool_content.to_s
+                           end
             {
               role: 'user',
               content: [
