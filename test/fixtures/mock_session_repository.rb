@@ -31,7 +31,10 @@ module Rubyrana
       def create_agent(session_id, session_agent)
         ensure_session!(session_id)
         agent_id = session_agent.agent_id
-        raise SessionException, "Agent #{agent_id} already exists in session #{session_id}" if @agents[session_id].key?(agent_id)
+        if @agents[session_id].key?(agent_id)
+          raise SessionException,
+                "Agent #{agent_id} already exists in session #{session_id}"
+        end
 
         @agents[session_id][agent_id] = session_agent
         @messages[session_id][agent_id] = {}
@@ -47,7 +50,10 @@ module Rubyrana
       def update_agent(session_id, session_agent)
         ensure_session!(session_id)
         agent_id = session_agent.agent_id
-        raise SessionException, "Agent #{agent_id} does not exist in session #{session_id}" unless @agents[session_id].key?(agent_id)
+        unless @agents[session_id].key?(agent_id)
+          raise SessionException,
+                "Agent #{agent_id} does not exist in session #{session_id}"
+        end
 
         @agents[session_id][agent_id] = session_agent
       end
@@ -56,7 +62,10 @@ module Rubyrana
         ensure_session!(session_id)
         ensure_agent!(session_id, agent_id)
         message_id = session_message.message_id
-        raise SessionException, "Message #{message_id} already exists in agent #{agent_id} in session #{session_id}" if @messages[session_id][agent_id].key?(message_id)
+        if @messages[session_id][agent_id].key?(message_id)
+          raise SessionException,
+                "Message #{message_id} already exists in agent #{agent_id} in session #{session_id}"
+        end
 
         @messages[session_id][agent_id][message_id] = session_message
       end
@@ -72,7 +81,10 @@ module Rubyrana
         ensure_session!(session_id)
         ensure_agent!(session_id, agent_id)
         message_id = session_message.message_id
-        raise SessionException, "Message #{message_id} does not exist in session #{session_id}" unless @messages[session_id][agent_id].key?(message_id)
+        unless @messages[session_id][agent_id].key?(message_id)
+          raise SessionException,
+                "Message #{message_id} does not exist in session #{session_id}"
+        end
 
         @messages[session_id][agent_id][message_id] = session_message
       end
@@ -103,7 +115,10 @@ module Rubyrana
       def update_multi_agent(session_id, multi_agent)
         ensure_session!(session_id)
         multi_agent_id = multi_agent.id
-        raise SessionException, "MultiAgent #{multi_agent_id} does not exist in session #{session_id}" unless @multi_agents[session_id].key?(multi_agent_id)
+        unless @multi_agents[session_id].key?(multi_agent_id)
+          raise SessionException,
+                "MultiAgent #{multi_agent_id} does not exist in session #{session_id}"
+        end
 
         @multi_agents[session_id][multi_agent_id] = multi_agent.serialize_state
       end
@@ -115,7 +130,10 @@ module Rubyrana
       end
 
       def ensure_agent!(session_id, agent_id)
-        raise SessionException, "Agent #{agent_id} does not exist in session #{session_id}" unless @agents[session_id].key?(agent_id)
+        return if @agents[session_id].key?(agent_id)
+
+        raise SessionException,
+              "Agent #{agent_id} does not exist in session #{session_id}"
       end
     end
   end

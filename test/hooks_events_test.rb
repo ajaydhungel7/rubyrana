@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "test_helper"
-require_relative "fixtures/mocked_model_provider"
+require 'test_helper'
+require_relative 'fixtures/mocked_model_provider'
 
 class HooksEventsTest < Minitest::Test
   def test_hook_events_emitted_for_call
     responses = [
-      { text: "Hello" }
+      { text: 'Hello' }
     ]
     provider = Rubyrana::TestFixtures::MockedModelProvider.new(responses)
     agent = Rubyrana::Agent.new(model: provider)
@@ -19,9 +19,9 @@ class HooksEventsTest < Minitest::Test
     registry.add_callback(Rubyrana::Hooks::Events::AfterModelCallEvent) { |event| events << event }
     registry.add_callback(Rubyrana::Hooks::Events::MessageAddedEvent) { |event| events << event }
 
-    result = agent.call("Hi")
+    result = agent.call('Hi')
 
-    assert_equal "Hello", result
+    assert_equal 'Hello', result
     assert_equal 6, events.length
     assert_instance_of Rubyrana::Hooks::Events::BeforeInvocationEvent, events[0]
     assert_instance_of Rubyrana::Hooks::Events::MessageAddedEvent, events[1]
@@ -34,15 +34,15 @@ class HooksEventsTest < Minitest::Test
   def test_hook_events_emitted_for_tool_call
     responses = [
       {
-        text: "",
+        text: '',
         tool_calls: [
-          { name: "echo", arguments: { text: "hi" } }
+          { name: 'echo', arguments: { text: 'hi' } }
         ]
       },
-      { text: "Done" }
+      { text: 'Done' }
     ]
     provider = Rubyrana::TestFixtures::MockedModelProvider.new(responses)
-    tool = Rubyrana::Tool.new("echo") { |text:| text }
+    tool = Rubyrana::Tool.new('echo') { |text:| text }
     agent = Rubyrana::Agent.new(model: provider, tools: [tool])
 
     events = []
@@ -50,9 +50,9 @@ class HooksEventsTest < Minitest::Test
     registry.add_callback(Rubyrana::Hooks::Events::BeforeToolCallEvent) { |event| events << event }
     registry.add_callback(Rubyrana::Hooks::Events::AfterToolCallEvent) { |event| events << event }
 
-    result = agent.call("Hi")
+    result = agent.call('Hi')
 
-    assert_equal "Done", result
+    assert_equal 'Done', result
     assert_equal 2, events.length
     assert_instance_of Rubyrana::Hooks::Events::BeforeToolCallEvent, events[0]
     assert_instance_of Rubyrana::Hooks::Events::AfterToolCallEvent, events[1]

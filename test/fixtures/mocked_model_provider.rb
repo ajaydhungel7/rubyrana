@@ -18,14 +18,14 @@ module Rubyrana
         response
       end
 
-      def stream(prompt: nil, messages: nil, tools: [], **opts, &block)
-        response = complete(prompt: prompt, messages: messages, tools: tools, **opts)
-        text = response.is_a?(Hash) ? (response[:text] || response["text"] || "") : response.to_s
-        chunks = response.is_a?(Hash) ? (response[:chunks] || response["chunks"]) : nil
+      def stream(prompt: nil, messages: nil, tools: [], **, &)
+        response = complete(prompt: prompt, messages: messages, tools: tools, **)
+        text = response.is_a?(Hash) ? (response[:text] || response['text'] || '') : response.to_s
+        chunks = response.is_a?(Hash) ? (response[:chunks] || response['chunks']) : nil
         payloads = Array(chunks || [text])
 
         if block_given?
-          payloads.each { |chunk| yield chunk }
+          payloads.each(&)
           return
         end
 

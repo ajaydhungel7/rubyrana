@@ -10,13 +10,13 @@ module Rubyrana
       end
 
       def register(hook)
-        raise ArgumentError, "Hook must respond to at least one hook method" unless valid_hook?(hook)
+        raise ArgumentError, 'Hook must respond to at least one hook method' unless valid_hook?(hook)
 
         @hooks << hook
       end
 
       def register_provider(provider)
-        raise ArgumentError, "Hook provider must respond to register_hooks" unless provider.respond_to?(:register_hooks)
+        raise ArgumentError, 'Hook provider must respond to register_hooks' unless provider.respond_to?(:register_hooks)
 
         provider.register_hooks(self)
         @providers << provider
@@ -25,7 +25,7 @@ module Rubyrana
 
       def add_callback(event_class, callable = nil, &block)
         handler = callable || block
-        raise ArgumentError, "Callback required" unless handler
+        raise ArgumentError, 'Callback required' unless handler
 
         id = SecureRandom.uuid
         @callbacks[event_class] << { id: id, handler: handler }

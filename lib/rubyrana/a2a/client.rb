@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "net/http"
-require "json"
+require 'net/http'
+require 'json'
 
 module Rubyrana
   module A2A
@@ -12,20 +12,20 @@ module Rubyrana
       end
 
       def get_agent_card
-        uri = URI.join(@base_url, "/.well-known/agent-card")
+        uri = URI.join(@base_url, '/.well-known/agent-card')
         response = http_client.get(uri)
         raise Rubyrana::ProviderError, "A2A agent card request failed (status #{response.code})" unless response.is_a?(Net::HTTPSuccess)
 
         body = JSON.parse(response.body)
         Rubyrana::A2A::AgentCard.new(
-          name: body["name"],
-          description: body["description"],
-          url: body["url"],
-          version: body["version"],
-          capabilities: body["capabilities"],
-          default_input_modes: body["default_input_modes"] || [],
-          default_output_modes: body["default_output_modes"] || [],
-          skills: body["skills"] || []
+          name: body['name'],
+          description: body['description'],
+          url: body['url'],
+          version: body['version'],
+          capabilities: body['capabilities'],
+          default_input_modes: body['default_input_modes'] || [],
+          default_output_modes: body['default_output_modes'] || [],
+          skills: body['skills'] || []
         )
       rescue JSON::ParserError => e
         raise Rubyrana::ProviderError, e.message
@@ -68,12 +68,12 @@ module Rubyrana
       private
 
       def post_message(message)
-        uri = URI.join(@base_url, "/messages")
+        uri = URI.join(@base_url, '/messages')
         request = Net::HTTP::Post.new(uri)
-        request["Content-Type"] = "application/json"
+        request['Content-Type'] = 'application/json'
         request.body = JSON.dump({ message: serialize_message(message) })
 
-        @http_client.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+        @http_client.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
           http.request(request)
         end
       end
@@ -82,11 +82,11 @@ module Rubyrana
         raise Rubyrana::ProviderError, "A2A message request failed (status #{response.code})" unless response.is_a?(Net::HTTPSuccess)
 
         body = JSON.parse(response.body)
-        message = body["message"] || body
-        parts = Array(message["parts"]).map { |part| Rubyrana::A2A::Part.new(kind: part["kind"], text: part["text"]) }
+        message = body['message'] || body
+        parts = Array(message['parts']).map { |part| Rubyrana::A2A::Part.new(kind: part['kind'], text: part['text']) }
         Rubyrana::A2A::Message.new(
-          message_id: message["message_id"] || SecureRandom.uuid,
-          role: message["role"] || "agent",
+          message_id: message['message_id'] || SecureRandom.uuid,
+          role: message['role'] || 'agent',
           parts: parts
         )
       rescue JSON::ParserError => e

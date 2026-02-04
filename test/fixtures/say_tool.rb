@@ -3,32 +3,32 @@
 module Rubyrana
   module TestFixtures
     Rubyrana.tool(
-      "say",
-      description: "Say something.",
+      'say',
+      description: 'Say something.',
       schema: {
-        type: "object",
-        properties: { input: { type: "string" } },
-        required: ["input"]
+        type: 'object',
+        properties: { input: { type: 'string' } },
+        required: ['input']
       }
     ) do |input:|
       "Hello #{input}!"
     end
 
     Rubyrana.tool(
-      "dont_say",
-      description: "Dont say something.",
+      'dont_say',
+      description: 'Dont say something.',
       schema: {
-        type: "object",
-        properties: { input: { type: "string" } },
-        required: ["input"]
+        type: 'object',
+        properties: { input: { type: 'string' } },
+        required: ['input']
       }
     ) do |input:|
       _input = input
-      "Didnt say anything!"
+      'Didnt say anything!'
     end
 
     def self.not_a_tool
-      "Not a tool!"
+      'Not a tool!'
     end
   end
 end

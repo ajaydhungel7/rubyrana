@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-require "timeout"
+require 'timeout'
 
 module Rubyrana
   class Agent
-    def initialize(model: nil, tools: [], load_tools_from: nil, memory: true, history: [], safety_filters: [], store: nil, session_id: nil, memory_strategy: nil, structured_output_schema: nil, session_repository: nil, agent_id: nil)
+    def initialize(model: nil, tools: [], load_tools_from: nil, memory: true, history: [], safety_filters: [],
+                   store: nil, session_id: nil, memory_strategy: nil, structured_output_schema: nil, session_repository: nil, agent_id: nil)
       @model = model || Rubyrana.config.default_provider
-      raise ConfigurationError, "No provider configured" unless @model
+      raise ConfigurationError, 'No provider configured' unless @model
 
       @tool_registry = ToolRegistry.new(tools)
       @load_tools_from = load_tools_from
@@ -49,71 +50,77 @@ module Rubyrana
           structured_output: nil,
           usage: nil,
           message: nil,
-          stop_reason: "interrupted",
+          stop_reason: 'interrupted',
           tool_results: tool_results,
           tool_uses: tool_uses,
           interrupts: interrupts
         )
         @interrupted = nil
-        return return_result ? result : ""
+        return return_result ? result : ''
       end
       ensure_session_records
       context = build_context(request_id: request_id, prompt: prompt)
       Rubyrana.config.hooks.before_request(context)
-      emit_hook_event(Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: self, request_id: request_id, prompt: prompt, timestamp: Time.now))
+      emit_hook_event(Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: self, request_id: request_id,
+                                                                         prompt: prompt, timestamp: Time.now))
 
       apply_safety_filters(prompt)
       messages = @memory ? @messages.dup : []
-      user_message = { role: "user", content: prompt }
+      user_message = { role: 'user', content: prompt }
       messages << user_message
-      emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: user_message, timestamp: Time.now))
+      emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                     message: user_message, timestamp: Time.now))
       persist_session_message(user_message)
       max_iterations = opts.delete(:max_iterations) || 5
 
-      Rubyrana.config.tracer.start_span("rubyrana.agent.call", context) do
+      Rubyrana.config.tracer.start_span('rubyrana.agent.call', context) do
         max_iterations.times do
           start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
           tools_definitions = @tool_registry.definitions
           if structured_tool
-            tools_definitions = tools_definitions + [structured_tool.to_h]
-            opts[:tool_choice] ||= { type: "tool", name: structured_tool.name }
+            tools_definitions += [structured_tool.to_h]
+            opts[:tool_choice] ||= { type: 'tool', name: structured_tool.name }
           end
-          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id, messages: messages, tools: tools_definitions, timestamp: Time.now))
+          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id,
+                                                                            messages: messages, tools: tools_definitions, timestamp: Time.now))
 
           begin
             rate_limiter&.acquire(1)
             global_semaphore&.acquire(:model)
             response = @model.complete(messages: messages, tools: tools_definitions, **opts)
-            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id, response: response, timestamp: Time.now))
+            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id,
+                                                                             response: response, timestamp: Time.now))
           ensure
             global_semaphore&.release(:model)
           end
           elapsed_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
-          Rubyrana.config.metrics.timing("rubyrana.model.latency_ms", elapsed_ms, { request_id: request_id })
+          Rubyrana.config.metrics.timing('rubyrana.model.latency_ms', elapsed_ms, { request_id: request_id })
 
-          text = response[:text] || response["text"] || ""
-          tool_calls = response[:tool_calls] || response["tool_calls"] || []
-          assistant_content = response[:assistant_content] || response["assistant_content"]
-          @last_usage = response[:usage] || response["usage"]
+          text = response[:text] || response['text'] || ''
+          tool_calls = response[:tool_calls] || response['tool_calls'] || []
+          assistant_content = response[:assistant_content] || response['assistant_content']
+          @last_usage = response[:usage] || response['usage']
 
           if tool_calls.any?
-            log_debug("Tool calls requested", tool_calls: tool_calls)
+            log_debug('Tool calls requested', tool_calls: tool_calls)
             if assistant_content
-              assistant_message = { role: "assistant", content: assistant_content }
+              assistant_message = { role: 'assistant', content: assistant_content }
               messages << assistant_message
-              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: assistant_message, timestamp: Time.now))
+              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                             message: assistant_message, timestamp: Time.now))
               persist_session_message(assistant_message)
             elsif !text.to_s.empty?
-              assistant_message = { role: "assistant", content: text }
+              assistant_message = { role: 'assistant', content: text }
               messages << assistant_message
-              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: assistant_message, timestamp: Time.now))
+              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                             message: assistant_message, timestamp: Time.now))
               persist_session_message(assistant_message)
             end
 
             tool_calls.each do |call|
-              tool_name = call[:name] || call["name"]
-              tool_call_id = call[:id] || call["id"]
-              arguments = call[:arguments] || call["arguments"] || {}
+              tool_name = call[:name] || call['name']
+              tool_call_id = call[:id] || call['id']
+              arguments = call[:arguments] || call['arguments'] || {}
               if structured_tool && tool_name == structured_tool.name
                 structured_tool.validate!(arguments)
                 structured_result = arguments
@@ -122,34 +129,39 @@ module Rubyrana
               tool = @tool_registry.fetch(tool_name)
               raise ToolError, "Unknown tool: #{tool_name}" unless tool
 
-              tool_uses << Rubyrana::Types::ToolUse.new(name: tool_name, arguments: arguments, tool_call_id: tool_call_id)
+              tool_uses << Rubyrana::Types::ToolUse.new(name: tool_name, arguments: arguments,
+                                                        tool_call_id: tool_call_id)
 
               tool_rate_limiters[tool_name]&.acquire(1)
 
               Rubyrana.config.hooks.on_tool_call({ request_id: request_id, tool: tool_name, arguments: arguments })
-              emit_hook_event(Rubyrana::Hooks::Events::BeforeToolCallEvent.new(agent: self, request_id: request_id, tool_name: tool_name, arguments: arguments, timestamp: Time.now))
-              Rubyrana.config.metrics.increment("rubyrana.tool.call", 1, { request_id: request_id, tool: tool_name })
-              log_debug("Running tool", tool: tool_name, arguments: arguments)
+              emit_hook_event(Rubyrana::Hooks::Events::BeforeToolCallEvent.new(agent: self, request_id: request_id,
+                                                                               tool_name: tool_name, arguments: arguments, timestamp: Time.now))
+              Rubyrana.config.metrics.increment('rubyrana.tool.call', 1, { request_id: request_id, tool: tool_name })
+              log_debug('Running tool', tool: tool_name, arguments: arguments)
               begin
                 semaphore = tool_semaphores_by_tool[tool_name] || tool_semaphore
                 semaphore&.acquire(tool_name)
                 result = if tool_timeout
-                  Timeout.timeout(tool_timeout) { tool.call(**symbolize_keys(arguments)) }
-                else
-                  tool.call(**symbolize_keys(arguments))
-                end
+                           Timeout.timeout(tool_timeout) { tool.call(**symbolize_keys(arguments)) }
+                         else
+                           tool.call(**symbolize_keys(arguments))
+                         end
               rescue Timeout::Error
                 raise ToolError, "Tool '#{tool_name}' exceeded timeout of #{tool_timeout}s"
               ensure
                 semaphore&.release(tool_name)
               end
               Rubyrana.config.hooks.on_tool_result({ request_id: request_id, tool: tool_name, result: result })
-              emit_hook_event(Rubyrana::Hooks::Events::AfterToolCallEvent.new(agent: self, request_id: request_id, tool_name: tool_name, result: result, timestamp: Time.now))
-              tool_results << Rubyrana::Types::ToolResult.new(text: result.to_s, structured: result.is_a?(Hash) ? result : nil)
+              emit_hook_event(Rubyrana::Hooks::Events::AfterToolCallEvent.new(agent: self, request_id: request_id,
+                                                                              tool_name: tool_name, result: result, timestamp: Time.now))
+              tool_results << Rubyrana::Types::ToolResult.new(text: result.to_s,
+                                                              structured: result.is_a?(Hash) ? result : nil)
               tool_message = build_tool_message(tool, result, tool_call_id)
               tool_message[:tool_call_id] = tool_call_id if tool_call_id
               messages << tool_message
-              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: tool_message, timestamp: Time.now))
+              emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                             message: tool_message, timestamp: Time.now))
               persist_session_message(tool_message)
             end
 
@@ -158,8 +170,8 @@ module Rubyrana
                 text: text.to_s,
                 structured_output: structured_result,
                 usage: @last_usage,
-                message: { role: "assistant", content: text.to_s },
-                stop_reason: "structured_output",
+                message: { role: 'assistant', content: text.to_s },
+                stop_reason: 'structured_output',
                 tool_results: tool_results,
                 tool_uses: tool_uses,
                 interrupts: interrupts
@@ -169,21 +181,23 @@ module Rubyrana
           end
 
           apply_safety_filters(text.to_s)
-          assistant_message = { role: "assistant", content: text.to_s }
+          assistant_message = { role: 'assistant', content: text.to_s }
           messages << assistant_message
-          emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: assistant_message, timestamp: Time.now))
+          emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                         message: assistant_message, timestamp: Time.now))
           persist_session_message(assistant_message)
           @messages = apply_memory_strategy(messages) if @memory
           persist_messages
           Rubyrana.config.hooks.after_request(context.merge({ response: text.to_s, usage: @last_usage }))
-          emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id, prompt: prompt, response: text.to_s, usage: @last_usage, timestamp: Time.now))
+          emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id,
+                                                                            prompt: prompt, response: text.to_s, usage: @last_usage, timestamp: Time.now))
           if return_result || structured_result
             return Rubyrana::Types::AgentResult.new(
               text: text.to_s,
               structured_output: structured_result,
               usage: @last_usage,
-              message: { role: "assistant", content: text.to_s },
-              stop_reason: structured_result ? "structured_output" : "end_turn",
+              message: { role: 'assistant', content: text.to_s },
+              stop_reason: structured_result ? 'structured_output' : 'end_turn',
               tool_results: tool_results,
               tool_uses: tool_uses,
               interrupts: interrupts
@@ -193,14 +207,15 @@ module Rubyrana
         end
       end
 
-      raise ToolError, "Tool loop exceeded max iterations"
+      raise ToolError, 'Tool loop exceeded max iterations'
     end
 
     def stream(prompt, **opts, &block)
       structured_schema = opts.delete(:structured_output_schema) || @default_structured_output_schema
       if structured_schema
         result = structured_output(prompt, schema: structured_schema, **opts)
-        agent_result = Rubyrana::Types::AgentResult.new(text: nil, structured_output: result, usage: @last_usage, stop_reason: "structured_output")
+        agent_result = Rubyrana::Types::AgentResult.new(text: nil, structured_output: result, usage: @last_usage,
+                                                        stop_reason: 'structured_output')
         if block
           block.call(agent_result)
           return agent_result
@@ -215,55 +230,62 @@ module Rubyrana
       ensure_session_records
       context = build_context(request_id: request_id, prompt: prompt)
       Rubyrana.config.hooks.before_request(context)
-      emit_hook_event(Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: self, request_id: request_id, prompt: prompt, timestamp: Time.now))
+      emit_hook_event(Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: self, request_id: request_id,
+                                                                         prompt: prompt, timestamp: Time.now))
 
       apply_safety_filters(prompt)
       messages = @memory ? @messages.dup : []
-      user_message = { role: "user", content: prompt }
+      user_message = { role: 'user', content: prompt }
       messages << user_message
-      emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: user_message, timestamp: Time.now))
+      emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                     message: user_message, timestamp: Time.now))
       persist_session_message(user_message)
 
       output = String.new
       stream_proc = lambda do |chunk|
         output << chunk.to_s
-        block.call(chunk) if block
+        block&.call(chunk)
       end
 
       rate_limiter = opts.delete(:rate_limiter) || model_rate_limiter || Rubyrana.config.rate_limiter
       global_semaphore = Rubyrana.config.global_semaphore
 
       if block
-        Rubyrana.config.tracer.start_span("rubyrana.agent.stream", context) do
+        Rubyrana.config.tracer.start_span('rubyrana.agent.stream', context) do
           start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id, messages: messages, tools: @tool_registry.definitions, timestamp: Time.now))
+          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id,
+                                                                            messages: messages, tools: @tool_registry.definitions, timestamp: Time.now))
           begin
             rate_limiter&.acquire(1)
             global_semaphore&.acquire(:model)
             @model.stream(messages: messages, tools: @tool_registry.definitions, **opts, &stream_proc)
-            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id, response: { text: output }, timestamp: Time.now))
+            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id,
+                                                                             response: { text: output }, timestamp: Time.now))
           ensure
             global_semaphore&.release(:model)
           end
           elapsed_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
-          Rubyrana.config.metrics.timing("rubyrana.model.latency_ms", elapsed_ms, { request_id: request_id })
+          Rubyrana.config.metrics.timing('rubyrana.model.latency_ms', elapsed_ms, { request_id: request_id })
         end
         apply_safety_filters(output)
-        assistant_message = { role: "assistant", content: output }
+        assistant_message = { role: 'assistant', content: output }
         messages << assistant_message
-        emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: assistant_message, timestamp: Time.now))
+        emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                       message: assistant_message, timestamp: Time.now))
         persist_session_message(assistant_message)
         @messages = apply_memory_strategy(messages) if @memory
         persist_messages
         Rubyrana.config.hooks.after_request(context.merge({ response: output }))
-        emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id, prompt: prompt, response: output, usage: @last_usage, timestamp: Time.now))
+        emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id,
+                                                                          prompt: prompt, response: output, usage: @last_usage, timestamp: Time.now))
         return
       end
 
       Enumerator.new do |yielder|
-        Rubyrana.config.tracer.start_span("rubyrana.agent.stream", context) do
+        Rubyrana.config.tracer.start_span('rubyrana.agent.stream', context) do
           start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id, messages: messages, tools: @tool_registry.definitions, timestamp: Time.now))
+          emit_hook_event(Rubyrana::Hooks::Events::BeforeModelCallEvent.new(agent: self, request_id: request_id,
+                                                                            messages: messages, tools: @tool_registry.definitions, timestamp: Time.now))
           begin
             rate_limiter&.acquire(1)
             global_semaphore&.acquire(:model)
@@ -271,23 +293,26 @@ module Rubyrana
               output << chunk.to_s
               yielder << chunk.to_s
             end
-            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id, response: { text: output }, timestamp: Time.now))
+            emit_hook_event(Rubyrana::Hooks::Events::AfterModelCallEvent.new(agent: self, request_id: request_id,
+                                                                             response: { text: output }, timestamp: Time.now))
           ensure
             global_semaphore&.release(:model)
           end
           elapsed_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
-          Rubyrana.config.metrics.timing("rubyrana.model.latency_ms", elapsed_ms, { request_id: request_id })
+          Rubyrana.config.metrics.timing('rubyrana.model.latency_ms', elapsed_ms, { request_id: request_id })
         end
 
         apply_safety_filters(output)
-        assistant_message = { role: "assistant", content: output }
+        assistant_message = { role: 'assistant', content: output }
         messages << assistant_message
-        emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id, message: assistant_message, timestamp: Time.now))
+        emit_hook_event(Rubyrana::Hooks::Events::MessageAddedEvent.new(agent: self, request_id: request_id,
+                                                                       message: assistant_message, timestamp: Time.now))
         persist_session_message(assistant_message)
         @messages = apply_memory_strategy(messages) if @memory
         persist_messages
         Rubyrana.config.hooks.after_request(context.merge({ response: output }))
-        emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id, prompt: prompt, response: output, usage: @last_usage, timestamp: Time.now))
+        emit_hook_event(Rubyrana::Hooks::Events::AfterInvocationEvent.new(agent: self, request_id: request_id,
+                                                                          prompt: prompt, response: output, usage: @last_usage, timestamp: Time.now))
       end
     end
 
@@ -295,46 +320,42 @@ module Rubyrana
       @messages.dup
     end
 
-    def last_usage
-      @last_usage
-    end
+    attr_reader :last_usage
 
     def reset!
       @messages.clear
       persist_messages
     end
 
-    def interrupt!(reason: "interrupted", message: nil)
+    def interrupt!(reason: 'interrupted', message: nil)
       @interrupted = Rubyrana::Types::Interrupt.new(reason: reason, message: message)
     end
 
-    def structured_output(prompt, schema: nil, **opts)
+    def structured_output(prompt, schema: nil, **)
       structured_schema = schema || @default_structured_output_schema
-      raise StructuredOutputError, "Structured output schema is required" unless structured_schema
+      raise StructuredOutputError, 'Structured output schema is required' unless structured_schema
 
       @model.structured_output(
         prompt: prompt,
         schema: structured_schema,
         tools: @tool_registry.definitions,
-        **opts
+        **
       )
     end
 
-    def event_loop(prompt, structured_output_schema: nil, **opts)
+    def event_loop(prompt, structured_output_schema: nil, **)
       Rubyrana::EventLoop::Runner.run(
         agent: self,
         prompt: prompt,
         structured_output_schema: structured_output_schema,
-        **opts
+        **
       )
     end
 
     private
 
     def symbolize_keys(hash)
-      hash.each_with_object({}) do |(key, value), acc|
-        acc[key.to_sym] = value
-      end
+      hash.transform_keys(&:to_sym)
     end
 
     def log_debug(message, **data)
@@ -348,16 +369,16 @@ module Rubyrana
       @safety_filters.each { |filter| filter.enforce!(value) }
     end
 
-    def build_tool_message(tool, result, tool_call_id)
+    def build_tool_message(tool, result, _tool_call_id)
       if result.is_a?(Hash)
         {
-          role: "tool",
+          role: 'tool',
           name: tool.name,
-          content: result[:text] || result["text"] || result.to_json,
+          content: result[:text] || result['text'] || result.to_json,
           structured: result
         }
       else
-        { role: "tool", name: tool.name, content: result.to_s }
+        { role: 'tool', name: tool.name, content: result.to_s }
       end
     end
 
@@ -410,10 +431,10 @@ module Rubyrana
       return unless @messages.empty?
 
       messages = if @session_repository.respond_to?(:list_all_messages)
-        @session_repository.list_all_messages(@session_id, @agent_id)
-      else
-        @session_repository.list_messages(@session_id, @agent_id)
-      end
+                   @session_repository.list_all_messages(@session_id, @agent_id)
+                 else
+                   @session_repository.list_messages(@session_id, @agent_id)
+                 end
 
       @messages = messages.map do |record|
         { role: record.role, content: record.content }

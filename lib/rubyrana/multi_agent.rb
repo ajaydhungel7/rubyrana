@@ -7,15 +7,15 @@ module Rubyrana
       @router = router
     end
 
-    def call(prompt, **opts)
+    def call(prompt, **)
       agent = @router ? @router.route(prompt, agents: @agents) : @agents.first
-      raise Rubyrana::RoutingError, "No agents configured" unless agent
+      raise Rubyrana::RoutingError, 'No agents configured' unless agent
 
-      agent.call(prompt, **opts)
+      agent.call(prompt, **)
     end
 
-    def broadcast(prompt, **opts)
-      @agents.map { |agent| agent.call(prompt, **opts) }
+    def broadcast(prompt, **)
+      @agents.map { |agent| agent.call(prompt, **) }
     end
   end
 
@@ -26,8 +26,8 @@ module Rubyrana
       @router = router
     end
 
-    def run(start_node:, prompt:, **opts)
-      raise Rubyrana::RoutingError, "Unknown start node" unless @nodes.key?(start_node)
+    def run(start_node:, prompt:, **)
+      raise Rubyrana::RoutingError, 'Unknown start node' unless @nodes.key?(start_node)
 
       current = start_node
       output = prompt
@@ -38,7 +38,7 @@ module Rubyrana
         agent = @nodes[current]
         raise Rubyrana::RoutingError, "No agent for node #{current}" unless agent
 
-        output = agent.call(output, **opts)
+        output = agent.call(output, **)
         next_node = next_node_for(current, output)
         break unless next_node
 
@@ -54,6 +54,7 @@ module Rubyrana
       if @router
         routed = @router.route(output, agents: @nodes.values)
         return routed if @nodes.key?(routed)
+
         return @nodes.key(routed)
       end
 

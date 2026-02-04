@@ -3,7 +3,7 @@
 module Rubyrana
   module Tools
     class MCPWebSearch
-      def initialize(command:, args: [], tool_name: "web_search")
+      def initialize(command:, args: [], tool_name: 'web_search')
         @command = command
         @args = args
         @tool_name = tool_name
@@ -11,15 +11,15 @@ module Rubyrana
 
       def tool
         Rubyrana::Tool.new(
-          "web_search",
-          description: "Web search via MCP server tool.",
+          'web_search',
+          description: 'Web search via MCP server tool.',
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              query: { type: "string" },
-              limit: { type: "number" }
+              query: { type: 'string' },
+              limit: { type: 'number' }
             },
-            required: ["query"]
+            required: ['query']
           }
         ) do |query:, limit: 5|
           mcp = Rubyrana::MCP::Client.new(command: @command, args: @args)

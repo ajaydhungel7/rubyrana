@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "test_helper"
-require_relative "fixtures/mocked_model_provider"
+require 'test_helper'
+require_relative 'fixtures/mocked_model_provider'
 
 class RateLimiterTest < Minitest::Test
   class FakeLimiter
@@ -18,10 +18,10 @@ class RateLimiterTest < Minitest::Test
 
   def test_rate_limiter_invoked_for_call
     limiter = FakeLimiter.new
-    provider = Rubyrana::TestFixtures::MockedModelProvider.new([{ text: "Hello" }])
+    provider = Rubyrana::TestFixtures::MockedModelProvider.new([{ text: 'Hello' }])
     agent = Rubyrana::Agent.new(model: provider)
 
-    agent.call("Hi", rate_limiter: limiter)
+    agent.call('Hi', rate_limiter: limiter)
 
     assert_equal 1, limiter.calls
   end

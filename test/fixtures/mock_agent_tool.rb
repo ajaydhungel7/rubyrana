@@ -10,11 +10,11 @@ module Rubyrana
       end
 
       def description
-        "Mock tool"
+        'Mock tool'
       end
 
       def schema
-        { type: "object", properties: {}, required: [] }
+        { type: 'object', properties: {}, required: [] }
       end
 
       def call(**_kwargs)

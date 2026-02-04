@@ -12,16 +12,14 @@ module Rubyrana
 
       def acquire(key)
         @mutex.synchronize do
-          while @counts[key] >= @limit
-            @condition.wait(@mutex)
-          end
+          @condition.wait(@mutex) while @counts[key] >= @limit
           @counts[key] += 1
         end
       end
 
       def release(key)
         @mutex.synchronize do
-          @counts[key] -= 1 if @counts[key] > 0
+          @counts[key] -= 1 if @counts[key].positive?
           @condition.signal
         end
       end

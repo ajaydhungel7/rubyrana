@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require "json"
-require "fileutils"
+require 'json'
+require 'fileutils'
 
 module Rubyrana
   module Persistence
     class FileStore < Base
-      def initialize(directory: ".rubyrana")
+      def initialize(directory: '.rubyrana')
         @directory = directory
         FileUtils.mkdir_p(@directory)
       end

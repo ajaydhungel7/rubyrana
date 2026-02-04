@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "test_helper"
+require 'test_helper'
 
 class CircuitBreakerTest < Minitest::Test
   def test_opens_after_failures

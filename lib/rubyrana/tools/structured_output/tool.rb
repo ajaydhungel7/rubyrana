@@ -4,7 +4,7 @@ module Rubyrana
   module Tools
     module StructuredOutput
       class Tool
-        DEFAULT_NAME = "__structured_output__"
+        DEFAULT_NAME = '__structured_output__'
 
         attr_reader :name, :schema
 
@@ -14,7 +14,7 @@ module Rubyrana
         end
 
         def description
-          "Return structured output that matches the provided schema."
+          'Return structured output that matches the provided schema.'
         end
 
         def to_h
@@ -26,8 +26,9 @@ module Rubyrana
         end
 
         def validate!(value)
-          raise Rubyrana::StructuredOutputError, "Structured output must be an object" unless value.is_a?(Hash)
-          required = schema[:required] || schema["required"] || []
+          raise Rubyrana::StructuredOutputError, 'Structured output must be an object' unless value.is_a?(Hash)
+
+          required = schema[:required] || schema['required'] || []
           required.each do |key|
             next if value.key?(key.to_sym) || value.key?(key.to_s)
 

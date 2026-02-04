@@ -42,9 +42,7 @@ module Rubyrana
         @timings.clear
       end
 
-      def exporter=(exporter)
-        @exporter = exporter
-      end
+      attr_writer :exporter
 
       private
 
@@ -57,7 +55,7 @@ module Rubyrana
       def export(kind, name, value, attributes)
         return unless @exporter
 
-        @exporter.export({ type: "metric", kind: kind, name: name, value: value, attributes: attributes })
+        @exporter.export({ type: 'metric', kind: kind, name: name, value: value, attributes: attributes })
       end
     end
   end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "faraday"
-require "json"
+require 'faraday'
+require 'json'
 
 module Rubyrana
   module Providers
@@ -15,8 +15,9 @@ module Rubyrana
         @circuit_breaker = circuit_breaker
       end
 
-      def complete(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024, temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts)
-        resolved_messages = format_messages(messages || [{ role: "user", content: prompt }])
+      def complete(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024,
+                   temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts)
+        resolved_messages = format_messages(messages || [{ role: 'user', content: prompt }])
         payload = build_payload(
           messages: resolved_messages,
           tools: tools,
@@ -31,10 +32,10 @@ module Rubyrana
         )
 
         response = with_retry do
-          client.post("/v1/messages") do |req|
-            req.headers["x-api-key"] = @api_key
-            req.headers["anthropic-version"] = "2023-06-01"
-            req.headers["Content-Type"] = "application/json"
+          client.post('/v1/messages') do |req|
+            req.headers['x-api-key'] = @api_key
+            req.headers['anthropic-version'] = '2023-06-01'
+            req.headers['Content-Type'] = 'application/json'
             req.body = JSON.dump(payload)
           end
         end
@@ -42,10 +43,11 @@ module Rubyrana
         parse_response(response)
       end
 
-      def stream(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024, temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts, &block)
+      def stream(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024,
+                 temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts, &)
         return super unless block_given?
 
-        resolved_messages = format_messages(messages || [{ role: "user", content: prompt }])
+        resolved_messages = format_messages(messages || [{ role: 'user', content: prompt }])
         payload = build_payload(
           messages: resolved_messages,
           tools: tools,
@@ -60,42 +62,40 @@ module Rubyrana
           stream: true
         )
 
-        stream_request("/v1/messages", payload, &block)
+        stream_request('/v1/messages', payload, &)
       end
 
       private
 
       def client
-        @client ||= Faraday.new(url: "https://api.anthropic.com") do |builder|
+        @client ||= Faraday.new(url: 'https://api.anthropic.com') do |builder|
           builder.options.timeout = @timeout
           builder.options.open_timeout = @timeout
         end
       end
 
       def parse_response(response)
-        unless response.success?
-          raise ProviderError, "Anthropic request failed (status #{response.status}): #{response.body}"
-        end
+        raise ProviderError, "Anthropic request failed (status #{response.status}): #{response.body}" unless response.success?
 
         body = JSON.parse(response.body)
-        assistant_content = body["content"] || []
-        text = assistant_content.select { |item| item["type"] == "text" }.map { |item| item["text"] }.join
-        tool_calls = assistant_content.select { |item| item["type"] == "tool_use" }.map do |item|
+        assistant_content = body['content'] || []
+        text = assistant_content.select { |item| item['type'] == 'text' }.map { |item| item['text'] }.join
+        tool_calls = assistant_content.select { |item| item['type'] == 'tool_use' }.map do |item|
           {
-            id: item["id"],
-            name: item["name"],
-            arguments: item["input"] || {}
+            id: item['id'],
+            name: item['name'],
+            arguments: item['input'] || {}
           }
         end
 
         {
           text: text,
           tool_calls: tool_calls,
-          usage: body["usage"],
+          usage: body['usage'],
           assistant_content: assistant_content
         }
       rescue JSON::ParserError
-        raise ProviderError, "Invalid response from Anthropic"
+        raise ProviderError, 'Invalid response from Anthropic'
       end
 
       def stream_request(path, payload, &block)
@@ -103,17 +103,17 @@ module Rubyrana
 
         with_retry do
           client.post(path) do |req|
-            req.headers["x-api-key"] = @api_key
-            req.headers["anthropic-version"] = "2023-06-01"
-            req.headers["Content-Type"] = "application/json"
+            req.headers['x-api-key'] = @api_key
+            req.headers['anthropic-version'] = '2023-06-01'
+            req.headers['Content-Type'] = 'application/json'
             req.options.on_data = proc do |chunk, _|
               buffer << chunk
               while (line = buffer.slice!(/.*\n/))
                 line = line.strip
-                next unless line.start_with?("data:")
+                next unless line.start_with?('data:')
 
-                data = line.delete_prefix("data:").strip
-                next if data == "[DONE]"
+                data = line.delete_prefix('data:').strip
+                next if data == '[DONE]'
 
                 begin
                   event = JSON.parse(data)
@@ -130,13 +130,14 @@ module Rubyrana
       end
 
       def extract_stream_delta(event)
-        return event.dig("delta", "text") if event["type"] == "content_block_delta"
-        return event.dig("content_block", "text") if event["type"] == "content_block_start"
+        return event.dig('delta', 'text') if event['type'] == 'content_block_delta'
+        return event.dig('content_block', 'text') if event['type'] == 'content_block_start'
 
         nil
       end
 
-      def build_payload(messages:, tools:, system:, tool_choice:, max_tokens:, temperature:, top_p:, stop_sequences:, metadata:, extra:, stream: false)
+      def build_payload(messages:, tools:, system:, tool_choice:, max_tokens:, temperature:, top_p:, stop_sequences:,
+                        metadata:, extra:, stream: false)
         payload = {
           model: @model,
           max_tokens: max_tokens,
@@ -155,7 +156,7 @@ module Rubyrana
           payload[:tools] = tools.map do |tool|
             entry = {
               name: tool[:name],
-              input_schema: tool[:input_schema] || { type: "object", properties: {}, required: [] }
+              input_schema: tool[:input_schema] || { type: 'object', properties: {}, required: [] }
             }
             entry[:description] = tool[:description] if tool[:description]
             entry
@@ -168,18 +169,18 @@ module Rubyrana
 
       def format_messages(messages)
         messages.map do |message|
-          role = message[:role] || message["role"]
-          content = message[:content] || message["content"]
+          role = message[:role] || message['role']
+          content = message[:content] || message['content']
 
-          if role == "tool"
-            tool_use_id = message[:tool_call_id] || message["tool_call_id"]
-            structured = message[:structured] || message["structured"]
-            tool_content = structured ? structured : message[:content] || message["content"]
+          if role == 'tool'
+            tool_use_id = message[:tool_call_id] || message['tool_call_id']
+            structured = message[:structured] || message['structured']
+            tool_content = structured || message[:content] || message['content']
             {
-              role: "user",
+              role: 'user',
               content: [
                 {
-                  type: "tool_result",
+                  type: 'tool_result',
                   tool_use_id: tool_use_id,
                   content: tool_content
                 }
@@ -194,18 +195,17 @@ module Rubyrana
       def with_retry
         policy = @retry_policy || Rubyrana.config.retry_policy
         breaker = @circuit_breaker || Rubyrana.config.circuit_breaker
-        raise ProviderError, "Circuit breaker open" unless breaker.allow_request?
+        raise ProviderError, 'Circuit breaker open' unless breaker.allow_request?
 
         policy.run do
           response = yield
-          if retryable_status?(response.status)
-            raise Rubyrana::Retry::RetryableError, "Anthropic request failed (status #{response.status})"
-          end
+          raise Rubyrana::Retry::RetryableError, "Anthropic request failed (status #{response.status})" if retryable_status?(response.status)
+
           breaker.record_success
           response
         end
       rescue Rubyrana::Retry::RetryableError, Faraday::Error => e
-        breaker.record_failure if breaker
+        breaker&.record_failure
         raise ProviderError, e.message
       end
 

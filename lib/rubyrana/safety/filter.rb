@@ -11,7 +11,7 @@ module Rubyrana
         violations = check(text)
         return if violations.empty?
 
-        raise Rubyrana::SafetyError, "Safety filter triggered: #{violations.join(", ")}" if violations.any?
+        raise Rubyrana::SafetyError, "Safety filter triggered: #{violations.join(', ')}" if violations.any?
       end
     end
 
@@ -21,7 +21,7 @@ module Rubyrana
       end
 
       def check(text)
-        @patterns.select { |pattern| text.match?(pattern) }.map(&:source)
+        @patterns.grep(text).map(&:source)
       end
     end
   end

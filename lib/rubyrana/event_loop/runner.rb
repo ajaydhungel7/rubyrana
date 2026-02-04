@@ -5,15 +5,15 @@ module Rubyrana
     module Runner
       module_function
 
-      def run(agent:, prompt:, structured_output_schema: nil, **opts)
+      def run(agent:, prompt:, structured_output_schema: nil, **)
         events = []
         callback_ids = attach_callbacks(events)
 
         if structured_output_schema
-          result = agent.structured_output(prompt, schema: structured_output_schema, **opts)
+          result = agent.structured_output(prompt, schema: structured_output_schema, **)
           events << StructuredOutputEvent.new(structured_output: result)
           stop = StopEvent.new(
-            stop_reason: "structured_output",
+            stop_reason: 'structured_output',
             message: nil,
             usage: agent.last_usage,
             structured_output: result,
@@ -24,9 +24,9 @@ module Rubyrana
         end
 
         begin
-          result = agent.call(prompt, return_result: true, **opts)
+          result = agent.call(prompt, return_result: true, **)
           stop = StopEvent.new(
-            stop_reason: result.stop_reason || "end_turn",
+            stop_reason: result.stop_reason || 'end_turn',
             message: result.message,
             usage: result.usage,
             structured_output: result.structured_output,
@@ -34,10 +34,10 @@ module Rubyrana
           )
           [events, stop]
         rescue Rubyrana::SafetyError => e
-          interrupt = Rubyrana::Types::Interrupt.new(reason: "guardrail_intervened", message: e.message)
+          interrupt = Rubyrana::Types::Interrupt.new(reason: 'guardrail_intervened', message: e.message)
           events << InterruptEvent.new(interrupt: interrupt, timestamp: Time.now)
           stop = StopEvent.new(
-            stop_reason: "guardrail_intervened",
+            stop_reason: 'guardrail_intervened',
             message: nil,
             usage: agent.last_usage,
             structured_output: nil,
@@ -49,14 +49,17 @@ module Rubyrana
         end
       end
 
-      def stream(agent:, prompt:, structured_output_schema: nil, **opts)
-        return enum_for(:stream, agent: agent, prompt: prompt, structured_output_schema: structured_output_schema, **opts) unless block_given?
+      def stream(agent:, prompt:, structured_output_schema: nil, **)
+        unless block_given?
+          return enum_for(:stream, agent: agent, prompt: prompt, structured_output_schema: structured_output_schema,
+                                   **)
+        end
 
         if structured_output_schema
-          result = agent.structured_output(prompt, schema: structured_output_schema, **opts)
+          result = agent.structured_output(prompt, schema: structured_output_schema, **)
           yield StructuredOutputEvent.new(structured_output: result)
           yield StopEvent.new(
-            stop_reason: "structured_output",
+            stop_reason: 'structured_output',
             message: nil,
             usage: agent.last_usage,
             structured_output: result,
@@ -65,10 +68,10 @@ module Rubyrana
           return
         end
 
-        agent.stream(prompt, **opts) do |chunk|
+        agent.stream(prompt, **) do |chunk|
           if chunk.is_a?(Rubyrana::Types::AgentResult)
             yield StopEvent.new(
-              stop_reason: chunk.stop_reason || "end_turn",
+              stop_reason: chunk.stop_reason || 'end_turn',
               message: chunk.message,
               usage: chunk.usage,
               structured_output: chunk.structured_output,

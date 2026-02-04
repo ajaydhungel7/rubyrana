@@ -20,14 +20,14 @@ module Rubyrana
         @registry.all
       end
 
-      def define(name, description: nil, schema: nil, &block)
-        tool = Rubyrana::Tool.new(name, description: description, schema: schema, &block)
+      def define(name, description: nil, schema: nil, &)
+        tool = Rubyrana::Tool.new(name, description: description, schema: schema, &)
         register(tool)
       end
     end
   end
 
-  def self.tool(name, description: nil, schema: nil, &block)
-    Tooling.define(name, description: description, schema: schema, &block)
+  def self.tool(name, description: nil, schema: nil, &)
+    Tooling.define(name, description: description, schema: schema, &)
   end
 end

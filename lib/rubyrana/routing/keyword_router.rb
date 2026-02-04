@@ -13,7 +13,7 @@ module Rubyrana
         index = match ? match[1] : @default_index
         agents.fetch(index)
       rescue IndexError
-        raise Rubyrana::RoutingError, "No agent found for route"
+        raise Rubyrana::RoutingError, 'No agent found for route'
       end
     end
   end

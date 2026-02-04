@@ -1,10 +1,30 @@
 # frozen_string_literal: true
 
-require "logger"
+require 'logger'
 
 module Rubyrana
   class Config
-    attr_accessor :logger, :default_provider, :debug, :hooks, :tracer, :metrics, :metrics_exporter, :trace_exporter, :retry_policy, :circuit_breaker, :tool_timeout, :rate_limiter, :tool_concurrency, :tool_semaphore, :model_rate_limiters, :global_concurrency, :global_semaphore, :tool_rate_limiters, :tool_concurrency_by_tool, :tool_semaphores_by_tool
+    attr_accessor :logger,
+                  :default_provider,
+                  :debug,
+                  :hooks,
+                  :tracer,
+                  :metrics,
+                  :retry_policy,
+                  :circuit_breaker,
+                  :tool_timeout,
+                  :rate_limiter,
+                  :tool_semaphore,
+                  :model_rate_limiters,
+                  :global_semaphore,
+                  :tool_rate_limiters,
+                  :tool_semaphores_by_tool
+
+    attr_reader :metrics_exporter,
+                :trace_exporter,
+                :tool_concurrency,
+                :tool_concurrency_by_tool,
+                :global_concurrency
 
     def initialize
       @logger = Logger.new($stdout)

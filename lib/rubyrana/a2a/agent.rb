@@ -7,7 +7,8 @@ module Rubyrana
 
       attr_reader :endpoint, :timeout, :name, :description
 
-      def initialize(endpoint:, name: nil, description: nil, timeout: DEFAULT_TIMEOUT, a2a_client_factory: nil, card_resolver: nil)
+      def initialize(endpoint:, name: nil, description: nil, timeout: DEFAULT_TIMEOUT, a2a_client_factory: nil,
+                     card_resolver: nil)
         @endpoint = endpoint
         @name = name
         @description = description
@@ -26,13 +27,13 @@ module Rubyrana
         stream(prompt) do |event|
           result = event[:result] if event[:result]
         end
-        raise RuntimeError, "No response received from A2A agent" unless result
+        raise 'No response received from A2A agent' unless result
 
         result
       end
 
       def stream(prompt = nil, **_kwargs)
-        raise ArgumentError, "prompt is required" if prompt.nil?
+        raise ArgumentError, 'prompt is required' if prompt.nil?
 
         last_event = nil
         last_complete_event = nil
@@ -42,7 +43,7 @@ module Rubyrana
           enumerator.each do |event|
             last_event = event
             last_complete_event = event if complete_event?(event)
-            yield({ type: "a2a_stream", event: event })
+            yield({ type: 'a2a_stream', event: event })
           end
           final_event = last_complete_event || last_event
           if final_event
@@ -56,7 +57,7 @@ module Rubyrana
           enumerator.each do |event|
             last_event = event
             last_complete_event = event if complete_event?(event)
-            yielder << { type: "a2a_stream", event: event }
+            yielder << { type: 'a2a_stream', event: event }
           end
 
           final_event = last_complete_event || last_event
@@ -97,17 +98,16 @@ module Rubyrana
         return true if event.is_a?(Rubyrana::A2A::Message)
 
         if event.is_a?(Array) && event.length == 2
-          task, update_event = event
+          _, update_event = event
           return true if update_event.nil?
 
           if update_event.is_a?(Rubyrana::A2A::TaskArtifactUpdateEvent)
             return update_event.last_chunk unless update_event.last_chunk.nil?
+
             return false
           end
 
-          if update_event.is_a?(Rubyrana::A2A::TaskStatusUpdateEvent)
-            return update_event.status.state == "completed" if update_event.status&.state
-          end
+          return update_event.status.state == 'completed' if update_event.is_a?(Rubyrana::A2A::TaskStatusUpdateEvent) && update_event.status&.state
 
           return false
         end

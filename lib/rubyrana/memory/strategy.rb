@@ -27,11 +27,11 @@ module Rubyrana
         return messages if messages.length <= @max_messages
         return messages.last(@max_messages) unless @summary_tool
 
-        summary = @summary_tool.call(text: messages.map { |m| m[:content] || m["content"] }.join("\n"))
-        summary_message = { role: "assistant", content: summary.to_s, summary: true }
+        summary = @summary_tool.call(text: messages.map { |m| m[:content] || m['content'] }.join("\n"))
+        summary_message = { role: 'assistant', content: summary.to_s, summary: true }
         trimmed = messages.last(@max_messages - 1)
         [summary_message] + trimmed
-       end
-     end
-   end
- end
+      end
+    end
+  end
+end

@@ -11,7 +11,7 @@ module Rubyrana
         return [] unless Dir.exist?(@directory)
 
         before = Rubyrana::Tooling.tools.dup
-        Dir[File.join(@directory, "**/*.rb")].sort.each { |file| require file }
+        Dir[File.join(@directory, '**/*.rb')].each { |file| require file }
         after = Rubyrana::Tooling.tools
         (after - before)
       end

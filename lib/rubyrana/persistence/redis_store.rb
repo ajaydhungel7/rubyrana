@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require "json"
+require 'json'
 
 module Rubyrana
   module Persistence
     class RedisStore < Base
-      def initialize(redis:, namespace: "rubyrana")
+      def initialize(redis:, namespace: 'rubyrana')
         @redis = redis
         @namespace = namespace
       end

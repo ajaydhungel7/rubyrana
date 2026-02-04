@@ -27,7 +27,7 @@ module Rubyrana
         elapsed = now - @last_refill
         return if elapsed <= 0
 
-        @tokens = [@burst, @tokens + elapsed * @rate].min
+        @tokens = [@burst, @tokens + (elapsed * @rate)].min
         @last_refill = now
       end
     end

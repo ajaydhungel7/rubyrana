@@ -5,7 +5,7 @@ module Rubyrana
     attr_reader :name, :description, :schema
 
     def initialize(name, description: nil, schema: nil, &block)
-      raise ToolError, "Tool requires a block" unless block_given?
+      raise ToolError, 'Tool requires a block' unless block_given?
 
       @name = name.to_s
       @description = description
@@ -24,7 +24,7 @@ module Rubyrana
       {
         name: name,
         description: description,
-        input_schema: schema || { type: "object", properties: {}, required: [] }
+        input_schema: schema || { type: 'object', properties: {}, required: [] }
       }
     end
 
@@ -33,7 +33,7 @@ module Rubyrana
     def validate_schema!(kwargs)
       return unless schema.is_a?(Hash)
 
-      required = schema[:required] || schema["required"] || []
+      required = schema[:required] || schema['required'] || []
       required.each do |key|
         next if kwargs.key?(key.to_sym) || kwargs.key?(key.to_s)
 

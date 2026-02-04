@@ -4,51 +4,51 @@ module Rubyrana
   module Session
     class Repository
       def create_session(_session)
-        raise NotImplementedError, "Repository must implement #create_session"
+        raise NotImplementedError, 'Repository must implement #create_session'
       end
 
       def read_session(_session_id)
-        raise NotImplementedError, "Repository must implement #read_session"
+        raise NotImplementedError, 'Repository must implement #read_session'
       end
 
       def create_agent(_session_id, _session_agent)
-        raise NotImplementedError, "Repository must implement #create_agent"
+        raise NotImplementedError, 'Repository must implement #create_agent'
       end
 
       def read_agent(_session_id, _agent_id)
-        raise NotImplementedError, "Repository must implement #read_agent"
+        raise NotImplementedError, 'Repository must implement #read_agent'
       end
 
       def update_agent(_session_id, _session_agent)
-        raise NotImplementedError, "Repository must implement #update_agent"
+        raise NotImplementedError, 'Repository must implement #update_agent'
       end
 
       def create_message(_session_id, _agent_id, _session_message)
-        raise NotImplementedError, "Repository must implement #create_message"
+        raise NotImplementedError, 'Repository must implement #create_message'
       end
 
       def read_message(_session_id, _agent_id, _message_id)
-        raise NotImplementedError, "Repository must implement #read_message"
+        raise NotImplementedError, 'Repository must implement #read_message'
       end
 
       def update_message(_session_id, _agent_id, _session_message)
-        raise NotImplementedError, "Repository must implement #update_message"
+        raise NotImplementedError, 'Repository must implement #update_message'
       end
 
       def list_messages(_session_id, _agent_id, limit: nil, offset: 0)
-        raise NotImplementedError, "Repository must implement #list_messages"
+        raise NotImplementedError, 'Repository must implement #list_messages'
       end
 
       def create_multi_agent(_session_id, _multi_agent)
-        raise NotImplementedError, "Repository must implement #create_multi_agent"
+        raise NotImplementedError, 'Repository must implement #create_multi_agent'
       end
 
       def read_multi_agent(_session_id, _multi_agent_id)
-        raise NotImplementedError, "Repository must implement #read_multi_agent"
+        raise NotImplementedError, 'Repository must implement #read_multi_agent'
       end
 
       def update_multi_agent(_session_id, _multi_agent)
-        raise NotImplementedError, "Repository must implement #update_multi_agent"
+        raise NotImplementedError, 'Repository must implement #update_multi_agent'
       end
     end
 
@@ -83,7 +83,10 @@ module Rubyrana
       def create_agent(session_id, session_agent)
         ensure_session!(session_id)
         agent_id = session_agent.agent_id
-        raise Rubyrana::SessionError, "Agent #{agent_id} already exists in session #{session_id}" if @agents[session_id].key?(agent_id)
+        if @agents[session_id].key?(agent_id)
+          raise Rubyrana::SessionError,
+                "Agent #{agent_id} already exists in session #{session_id}"
+        end
 
         @agents[session_id][agent_id] = session_agent
         @messages[session_id][agent_id] = {}
@@ -99,7 +102,10 @@ module Rubyrana
       def update_agent(session_id, session_agent)
         ensure_session!(session_id)
         agent_id = session_agent.agent_id
-        raise Rubyrana::SessionError, "Agent #{agent_id} does not exist in session #{session_id}" unless @agents[session_id].key?(agent_id)
+        unless @agents[session_id].key?(agent_id)
+          raise Rubyrana::SessionError,
+                "Agent #{agent_id} does not exist in session #{session_id}"
+        end
 
         @agents[session_id][agent_id] = session_agent
       end
@@ -108,7 +114,10 @@ module Rubyrana
         ensure_session!(session_id)
         ensure_agent!(session_id, agent_id)
         message_id = session_message.message_id
-        raise Rubyrana::SessionError, "Message #{message_id} already exists in agent #{agent_id} in session #{session_id}" if @messages[session_id][agent_id].key?(message_id)
+        if @messages[session_id][agent_id].key?(message_id)
+          raise Rubyrana::SessionError,
+                "Message #{message_id} already exists in agent #{agent_id} in session #{session_id}"
+        end
 
         @messages[session_id][agent_id][message_id] = session_message
       end
@@ -124,7 +133,10 @@ module Rubyrana
         ensure_session!(session_id)
         ensure_agent!(session_id, agent_id)
         message_id = session_message.message_id
-        raise Rubyrana::SessionError, "Message #{message_id} does not exist in session #{session_id}" unless @messages[session_id][agent_id].key?(message_id)
+        unless @messages[session_id][agent_id].key?(message_id)
+          raise Rubyrana::SessionError,
+                "Message #{message_id} does not exist in session #{session_id}"
+        end
 
         @messages[session_id][agent_id][message_id] = session_message
       end
@@ -155,7 +167,10 @@ module Rubyrana
       def update_multi_agent(session_id, multi_agent)
         ensure_session!(session_id)
         multi_agent_id = multi_agent.id
-        raise Rubyrana::SessionError, "MultiAgent #{multi_agent_id} does not exist in session #{session_id}" unless @multi_agents[session_id].key?(multi_agent_id)
+        unless @multi_agents[session_id].key?(multi_agent_id)
+          raise Rubyrana::SessionError,
+                "MultiAgent #{multi_agent_id} does not exist in session #{session_id}"
+        end
 
         @multi_agents[session_id][multi_agent_id] = serialize_multi_agent(multi_agent)
       end
@@ -167,7 +182,10 @@ module Rubyrana
       end
 
       def ensure_agent!(session_id, agent_id)
-        raise Rubyrana::SessionError, "Agent #{agent_id} does not exist in session #{session_id}" unless @agents[session_id].key?(agent_id)
+        return if @agents[session_id].key?(agent_id)
+
+        raise Rubyrana::SessionError,
+              "Agent #{agent_id} does not exist in session #{session_id}"
       end
 
       def serialize_multi_agent(multi_agent)

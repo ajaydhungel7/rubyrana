@@ -9,16 +9,14 @@ module Rubyrana
         return prompt if prompt.is_a?(Rubyrana::A2A::Message)
 
         if prompt.is_a?(Hash)
-          role = prompt[:role] || prompt["role"] || "user"
-          content = prompt[:content] || prompt["content"] || ""
+          role = prompt[:role] || prompt['role'] || 'user'
+          content = prompt[:content] || prompt['content'] || ''
           return build_message(role, content)
         end
 
-        if prompt.is_a?(Array)
-          return build_message("user", prompt)
-        end
+        return build_message('user', prompt) if prompt.is_a?(Array)
 
-        build_message("user", prompt.to_s)
+        build_message('user', prompt.to_s)
       end
 
       def convert_response_to_agent_result(event)
@@ -27,7 +25,7 @@ module Rubyrana
         Rubyrana::Types::AgentResult.new(
           text: text,
           message: message,
-          stop_reason: "end_turn",
+          stop_reason: 'end_turn',
           tool_results: [],
           tool_uses: [],
           interrupts: []
@@ -53,12 +51,12 @@ module Rubyrana
         return item if item.is_a?(Rubyrana::A2A::Part) || item.is_a?(Rubyrana::A2A::TextPart)
 
         if item.is_a?(Hash)
-          kind = item[:kind] || item["kind"] || "text"
-          text = item[:text] || item["text"] || item[:content] || item["content"] || item.to_s
+          kind = item[:kind] || item['kind'] || 'text'
+          text = item[:text] || item['text'] || item[:content] || item['content'] || item.to_s
           return Rubyrana::A2A::Part.new(kind: kind, text: text)
         end
 
-        Rubyrana::A2A::TextPart.new(kind: "text", text: item.to_s)
+        Rubyrana::A2A::TextPart.new(kind: 'text', text: item.to_s)
       end
 
       def extract_message(event)
@@ -70,11 +68,11 @@ module Rubyrana
         end
 
         if event.is_a?(Hash)
-          return event if event.key?(:role) || event.key?("role")
-          return event[:message] || event["message"] if event[:message] || event["message"]
+          return event if event.key?(:role) || event.key?('role')
+          return event[:message] || event['message'] if event[:message] || event['message']
         end
 
-        { role: "assistant", content: [{ text: event.to_s }] }
+        { role: 'assistant', content: [{ text: event.to_s }] }
       end
 
       def message_to_hash(message)
@@ -83,8 +81,8 @@ module Rubyrana
       end
 
       def extract_text_from_message(message)
-        content = message[:content] || message["content"] || []
-        content.map { |item| item[:text] || item["text"] }.compact.join
+        content = message[:content] || message['content'] || []
+        content.map { |item| item[:text] || item['text'] }.compact.join
       end
     end
   end

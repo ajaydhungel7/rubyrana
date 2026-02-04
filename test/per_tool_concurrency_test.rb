@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "test_helper"
-require_relative "fixtures/mocked_model_provider"
+require 'test_helper'
+require_relative 'fixtures/mocked_model_provider'
 
 class PerToolConcurrencyTest < Minitest::Test
   class FakeSemaphore
@@ -23,21 +23,21 @@ class PerToolConcurrencyTest < Minitest::Test
 
   def test_per_tool_semaphore_used
     responses = [
-      { text: "", tool_calls: [{ name: "echo", arguments: { text: "hi" } }] },
-      { text: "Done" }
+      { text: '', tool_calls: [{ name: 'echo', arguments: { text: 'hi' } }] },
+      { text: 'Done' }
     ]
     provider = Rubyrana::TestFixtures::MockedModelProvider.new(responses)
-    tool = Rubyrana::Tool.new("echo") { |text:| text }
+    tool = Rubyrana::Tool.new('echo') { |text:| text }
     agent = Rubyrana::Agent.new(model: provider, tools: [tool])
 
     semaphore = FakeSemaphore.new
-    Rubyrana.config.tool_semaphores_by_tool = { "echo" => semaphore }
+    Rubyrana.config.tool_semaphores_by_tool = { 'echo' => semaphore }
 
-    result = agent.call("Hi")
+    result = agent.call('Hi')
 
-    assert_equal "Done", result
-    assert_equal ["echo"], semaphore.acquired
-    assert_equal ["echo"], semaphore.released
+    assert_equal 'Done', result
+    assert_equal ['echo'], semaphore.acquired
+    assert_equal ['echo'], semaphore.released
   ensure
     Rubyrana.config.tool_semaphores_by_tool = {}
   end

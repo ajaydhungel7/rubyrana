@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "test_helper"
+require 'test_helper'
 
 class HooksProviderTest < Minitest::Test
   class DemoProvider < Rubyrana::Hooks::Provider
@@ -20,7 +20,8 @@ class HooksProviderTest < Minitest::Test
     registry = Rubyrana::Hooks::Registry.new
     registry.register_provider(provider)
 
-    event = Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: nil, request_id: "1", prompt: "hi", timestamp: Time.now)
+    event = Rubyrana::Hooks::Events::BeforeInvocationEvent.new(agent: nil, request_id: '1', prompt: 'hi',
+                                                               timestamp: Time.now)
     registry.emit(event)
 
     assert_equal 1, provider.events.length

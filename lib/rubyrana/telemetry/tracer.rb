@@ -18,9 +18,9 @@ module Rubyrana
         duration_ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time) * 1000
 
         @spans << Span.new(name: name, attributes: attributes, duration_ms: duration_ms)
-        @metrics&.timing("rubyrana.span.duration_ms", duration_ms, attributes.merge({ span: name }))
-        @logger&.debug({ type: "span", name: name, duration_ms: duration_ms, attributes: attributes })
-        @exporter&.export({ type: "span", name: name, duration_ms: duration_ms, attributes: attributes })
+        @metrics&.timing('rubyrana.span.duration_ms', duration_ms, attributes.merge({ span: name }))
+        @logger&.debug({ type: 'span', name: name, duration_ms: duration_ms, attributes: attributes })
+        @exporter&.export({ type: 'span', name: name, duration_ms: duration_ms, attributes: attributes })
 
         result
       end
@@ -33,9 +33,7 @@ module Rubyrana
         @spans.clear
       end
 
-      def exporter=(exporter)
-        @exporter = exporter
-      end
+      attr_writer :exporter
     end
   end
 end

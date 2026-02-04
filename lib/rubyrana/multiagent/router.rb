@@ -4,16 +4,16 @@ module Rubyrana
   module Multiagent
     class Router
       def route(prompt, agents:)
-        raise ArgumentError, "agents must not be empty" if agents.nil? || agents.empty?
+        raise ArgumentError, 'agents must not be empty' if agents.nil? || agents.empty?
 
         scored = agents.map do |agent|
           score = if agent.respond_to?(:match_score)
-            agent.match_score(prompt)
-          elsif agent.respond_to?(:keywords)
-            keyword_score(prompt, agent.keywords)
-          else
-            0
-          end
+                    agent.match_score(prompt)
+                  elsif agent.respond_to?(:keywords)
+                    keyword_score(prompt, agent.keywords)
+                  else
+                    0
+                  end
 
           [agent, score]
         end

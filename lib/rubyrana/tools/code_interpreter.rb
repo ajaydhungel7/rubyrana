@@ -1,31 +1,31 @@
 # frozen_string_literal: true
 
-require "json"
-require "open3"
-require "tempfile"
-require "timeout"
+require 'json'
+require 'open3'
+require 'tempfile'
+require 'timeout'
 
 module Rubyrana
   module Tools
     class CodeInterpreter
       DEFAULT_TIMEOUT = 5
 
-      def initialize(timeout_s: DEFAULT_TIMEOUT, ruby_bin: "ruby")
+      def initialize(timeout_s: DEFAULT_TIMEOUT, ruby_bin: 'ruby')
         @timeout_s = timeout_s
         @ruby_bin = ruby_bin
       end
 
       def tool
         Rubyrana::Tool.new(
-          "code_interpreter",
-          description: "Run Ruby code in a temporary process and return stdout/stderr.",
+          'code_interpreter',
+          description: 'Run Ruby code in a temporary process and return stdout/stderr.',
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              code: { type: "string" },
-              timeout_s: { type: "number" }
+              code: { type: 'string' },
+              timeout_s: { type: 'number' }
             },
-            required: ["code"]
+            required: ['code']
           }
         ) do |code:, timeout_s: nil|
           execute(code: code, timeout_s: timeout_s)
@@ -37,7 +37,7 @@ module Rubyrana
       def execute(code:, timeout_s: nil)
         timeout_value = (timeout_s || @timeout_s).to_f
 
-        Tempfile.create(["rubyrana", ".rb"]) do |file|
+        Tempfile.create(['rubyrana', '.rb']) do |file|
           file.write(code)
           file.flush
 
@@ -49,12 +49,12 @@ module Rubyrana
           }.to_json
         end
       rescue Timeout::Error
-        { stdout: "", stderr: "Execution timed out", exit_status: nil }.to_json
+        { stdout: '', stderr: 'Execution timed out', exit_status: nil }.to_json
       end
 
       def run_with_timeout(path, timeout_value)
-        stdout = ""
-        stderr = ""
+        stdout = ''
+        stderr = ''
         status = nil
 
         Timeout.timeout(timeout_value) do
