@@ -47,5 +47,8 @@ Style/StringConcatenation:
   Exclude:
     - 'test/**/*'
 
+Style/SelectByRegexp:
+  Enabled: false
+
 Gemspec/DevelopmentDependencies:
   Enabled: false
