@@ -21,7 +21,7 @@ module Rubyrana
       end
 
       def check(text)
-        @patterns.grep(text).map(&:source)
+        @patterns.select { |pattern| pattern.match?(text) }.map(&:source)
       end
     end
   end
