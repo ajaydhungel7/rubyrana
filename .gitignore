@@ -1,2 +1,5 @@
 .env
 .bundle/
+dist/
+vendor/strands-sdk-python/
+.rubyrana_sessions/

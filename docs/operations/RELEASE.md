@@ -9,7 +9,7 @@
 ## Release
 - Tag release in git (e.g., v0.1.0)
 - Build gem: `gem build rubyrana.gemspec`
-- Push gem: `gem push rubyrana-0.1.0.gem`
+- Push gem: `gem push dist/rubyrana-0.1.0.gem`
 
 ## Post-release
 - Update any version references

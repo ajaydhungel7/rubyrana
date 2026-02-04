@@ -6,32 +6,31 @@ require "json"
 module Rubyrana
   module Providers
     class Anthropic < Base
-      def initialize(api_key:, model:, client: nil)
+      def initialize(api_key:, model:, client: nil, timeout: 60, retry_policy: nil, circuit_breaker: nil)
         @api_key = api_key
         @model = model
         @client = client
+        @timeout = timeout
+        @retry_policy = retry_policy
+        @circuit_breaker = circuit_breaker
       end
 
-      def complete(prompt: nil, messages: nil, tools: [], **_opts)
+      def complete(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024, temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts)
         resolved_messages = format_messages(messages || [{ role: "user", content: prompt }])
-        payload = {
-          model: @model,
-          max_tokens: 1024,
-          messages: resolved_messages
-        }
+        payload = build_payload(
+          messages: resolved_messages,
+          tools: tools,
+          system: system,
+          tool_choice: tool_choice,
+          max_tokens: max_tokens,
+          temperature: temperature,
+          top_p: top_p,
+          stop_sequences: stop_sequences,
+          metadata: metadata,
+          extra: extra
+        )
 
-        if tools.any?
-          payload[:tools] = tools.map do |tool|
-            entry = {
-              name: tool[:name],
-              input_schema: tool[:input_schema] || { type: "object", properties: {}, required: [] }
-            }
-            entry[:description] = tool[:description] if tool[:description]
-            entry
-          end
-        end
-
-        response = request_with_retries do
+        response = with_retry do
           client.post("/v1/messages") do |req|
             req.headers["x-api-key"] = @api_key
             req.headers["anthropic-version"] = "2023-06-01"
@@ -43,27 +42,23 @@ module Rubyrana
         parse_response(response)
       end
 
-      def stream(prompt: nil, messages: nil, tools: [], **_opts, &block)
+      def stream(prompt: nil, messages: nil, tools: [], system: nil, tool_choice: nil, max_tokens: 1024, temperature: nil, top_p: nil, stop_sequences: nil, metadata: nil, extra: nil, **_opts, &block)
         return super unless block_given?
 
         resolved_messages = format_messages(messages || [{ role: "user", content: prompt }])
-        payload = {
-          model: @model,
-          max_tokens: 1024,
+        payload = build_payload(
           messages: resolved_messages,
+          tools: tools,
+          system: system,
+          tool_choice: tool_choice,
+          max_tokens: max_tokens,
+          temperature: temperature,
+          top_p: top_p,
+          stop_sequences: stop_sequences,
+          metadata: metadata,
+          extra: extra,
           stream: true
-        }
-
-        if tools.any?
-          payload[:tools] = tools.map do |tool|
-            entry = {
-              name: tool[:name],
-              input_schema: tool[:input_schema] || { type: "object", properties: {}, required: [] }
-            }
-            entry[:description] = tool[:description] if tool[:description]
-            entry
-          end
-        end
+        )
 
         stream_request("/v1/messages", payload, &block)
       end
@@ -71,7 +66,10 @@ module Rubyrana
       private
 
       def client
-        @client ||= Faraday.new(url: "https://api.anthropic.com")
+        @client ||= Faraday.new(url: "https://api.anthropic.com") do |builder|
+          builder.options.timeout = @timeout
+          builder.options.open_timeout = @timeout
+        end
       end
 
       def parse_response(response)
@@ -103,7 +101,7 @@ module Rubyrana
       def stream_request(path, payload, &block)
         buffer = String.new
 
-        request_with_retries do
+        with_retry do
           client.post(path) do |req|
             req.headers["x-api-key"] = @api_key
             req.headers["anthropic-version"] = "2023-06-01"
@@ -138,6 +136,36 @@ module Rubyrana
         nil
       end
 
+      def build_payload(messages:, tools:, system:, tool_choice:, max_tokens:, temperature:, top_p:, stop_sequences:, metadata:, extra:, stream: false)
+        payload = {
+          model: @model,
+          max_tokens: max_tokens,
+          messages: messages
+        }
+
+        payload[:system] = system if system
+        payload[:tool_choice] = tool_choice if tool_choice
+        payload[:temperature] = temperature if temperature
+        payload[:top_p] = top_p if top_p
+        payload[:stop_sequences] = stop_sequences if stop_sequences
+        payload[:metadata] = metadata if metadata
+        payload[:stream] = true if stream
+
+        if tools.any?
+          payload[:tools] = tools.map do |tool|
+            entry = {
+              name: tool[:name],
+              input_schema: tool[:input_schema] || { type: "object", properties: {}, required: [] }
+            }
+            entry[:description] = tool[:description] if tool[:description]
+            entry
+          end
+        end
+
+        payload.merge!(extra) if extra.is_a?(Hash)
+        payload
+      end
+
       def format_messages(messages)
         messages.map do |message|
           role = message[:role] || message["role"]
@@ -145,13 +173,15 @@ module Rubyrana
 
           if role == "tool"
             tool_use_id = message[:tool_call_id] || message["tool_call_id"]
+            structured = message[:structured] || message["structured"]
+            tool_content = structured ? structured : message[:content] || message["content"]
             {
               role: "user",
               content: [
                 {
                   type: "tool_result",
                   tool_use_id: tool_use_id,
-                  content: content.to_s
+                  content: tool_content
                 }
               ]
             }
@@ -161,15 +191,26 @@ module Rubyrana
         end
       end
 
-      def request_with_retries(max_retries: 2)
-        attempts = 0
-        begin
-          attempts += 1
-          yield
-        rescue Faraday::Error => e
-          retry if attempts <= max_retries
-          raise ProviderError, e.message
+      def with_retry
+        policy = @retry_policy || Rubyrana.config.retry_policy
+        breaker = @circuit_breaker || Rubyrana.config.circuit_breaker
+        raise ProviderError, "Circuit breaker open" unless breaker.allow_request?
+
+        policy.run do
+          response = yield
+          if retryable_status?(response.status)
+            raise Rubyrana::Retry::RetryableError, "Anthropic request failed (status #{response.status})"
+          end
+          breaker.record_success
+          response
         end
+      rescue Rubyrana::Retry::RetryableError, Faraday::Error => e
+        breaker.record_failure if breaker
+        raise ProviderError, e.message
+      end
+
+      def retryable_status?(status)
+        [408, 429, 500, 502, 503, 504].include?(status)
       end
     end
   end

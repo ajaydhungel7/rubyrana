@@ -46,6 +46,13 @@ Load tools from a directory:
 
 - agent = Rubyrana::Agent.new(load_tools_from: "./tools")
 
+## Memory Strategies
+
+Use a rolling window to cap context size:
+
+- strategy = Rubyrana::Memory::RollingWindow.new(max_messages: 20)
+- agent = Rubyrana::Agent.new(memory_strategy: strategy)
+
 ## MCP (Experimental)
 
 Use the MCP client to load tools:

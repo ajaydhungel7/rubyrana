@@ -5,6 +5,25 @@ require "faraday"
 require "json"
 
 class AnthropicProviderTest < Minitest::Test
+  def test_complete_includes_system_and_temperature
+    captured_body = nil
+    stubs = Faraday::Adapter::Test::Stubs.new do |stub|
+      stub.post("/v1/messages") do |env|
+        captured_body = env.body
+        [200, { "Content-Type" => "application/json" }, JSON.dump({ "content" => [{ "type" => "text", "text" => "ok" }] })]
+      end
+    end
+
+    client = Faraday.new { |builder| builder.adapter :test, stubs }
+    provider = Rubyrana::Providers::Anthropic.new(api_key: "test", model: "claude", client: client)
+
+    provider.complete(prompt: "hi", system: "You are helpful", temperature: 0.2)
+    body = JSON.parse(captured_body)
+
+    assert_equal "You are helpful", body["system"]
+    assert_equal 0.2, body["temperature"]
+    stubs.verify_stubbed_calls
+  end
   def test_complete_returns_text
     body = {
       "content" => [{ "type" => "text", "text" => "hello" }],

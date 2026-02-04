@@ -8,4 +8,6 @@ module Rubyrana
   class SafetyError < Error; end
   class PersistenceError < Error; end
   class RoutingError < Error; end
+  class StructuredOutputError < Error; end
+  class SessionError < Error; end
 end

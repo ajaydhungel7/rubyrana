@@ -8,7 +8,7 @@
 
   <div align="center">
     <img alt="Gem version" src="https://img.shields.io/gem/v/rubyrana" />
-    <img alt="Ruby" src="https://img.shields.io/badge/ruby-%3E%3D%203.1-brightgreen" />
+    <img alt="Ruby" src="https://img.shields.io/badge/ruby-%3E%3D%203.4-brightgreen" />
     <img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue" />
   </div>
 
@@ -165,10 +165,8 @@ puts agent.call("Explain agentic workflows in simple terms")
 
 ## Documentation
 
-- Getting Started
-- Core Concepts
-- Tools & MCP
-- Production Deployment
+- [docs/INDEX.md](docs/INDEX.md)
+- [examples/README.md](examples/README.md)
 
 ## Contributing
 

@@ -14,6 +14,7 @@ module Rubyrana
     end
 
     def call(**kwargs)
+      validate_schema!(kwargs)
       @block.call(**kwargs)
     rescue StandardError => e
       raise ToolError, e.message
@@ -25,6 +26,19 @@ module Rubyrana
         description: description,
         input_schema: schema || { type: "object", properties: {}, required: [] }
       }
+    end
+
+    private
+
+    def validate_schema!(kwargs)
+      return unless schema.is_a?(Hash)
+
+      required = schema[:required] || schema["required"] || []
+      required.each do |key|
+        next if kwargs.key?(key.to_sym) || kwargs.key?(key.to_s)
+
+        raise ToolError, "Missing required tool argument: #{key}"
+      end
     end
   end
 end

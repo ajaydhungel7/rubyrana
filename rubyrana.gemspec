@@ -5,19 +5,19 @@ require_relative "lib/rubyrana/version"
 Gem::Specification.new do |spec|
   spec.name          = "rubyrana"
   spec.version       = Rubyrana::VERSION
-  spec.authors       = ["Rubyrana Contributors"]
-  spec.email         = ["hello@rubyrana.dev"]
+  spec.authors       = ["Ajay Dhungel"]
+  spec.email         = ["dhungelajay@gmail.com"]
 
   spec.summary       = "Build production-ready AI agents in Ruby"
   spec.description   = "Rubyrana is a model-driven Ruby SDK for building AI agents."
-  spec.homepage      = "https://github.com/your-org/rubyrana"
+  spec.homepage      = "https://github.com/ajaydhungel7/rubyrana"
   spec.license       = "Apache-2.0"
-  spec.required_ruby_version = ">= 3.1.0"
+  spec.required_ruby_version = ">= 3.4.0"
 
   spec.files = Dir[
     "lib/**/*",
     "README.md",
-    "REPORT.md",
+    "docs/reports/REPORT.md",
     "LICENSE",
     "NOTICE",
     "CHANGELOG.md",
@@ -28,6 +28,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "faraday", ">= 2.0"
   spec.add_dependency "json", ">= 2.0"
+  spec.add_dependency "redis", ">= 4.0"
 
   spec.add_development_dependency "minitest", ">= 5.0"
   spec.add_development_dependency "rubocop", ">= 1.0"
