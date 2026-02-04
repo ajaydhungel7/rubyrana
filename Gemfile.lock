@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubyrana (0.1.1)
+    rubyrana (0.2.0)
       faraday (>= 2.0)
       json (>= 2.0)
       redis (>= 4.0)
@@ -68,4 +68,4 @@ DEPENDENCIES
   rubyrana!
 
 BUNDLED WITH
-  2.4.22
+   2.4.22
