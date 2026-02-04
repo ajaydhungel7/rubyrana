@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+- Fix safety blocklist matching
+- Update RuboCop configuration for Ruby 3.4
+- Refresh lockfile with Bundler 4.0.5
+
 ## 0.2.0
 - Add structured output support with retries and event loop integration
 - Expand hooks taxonomy and provider registration
